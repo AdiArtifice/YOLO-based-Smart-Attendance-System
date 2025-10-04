@@ -1,0 +1,42 @@
+# Root ignore (frontend inside my-project)
+
+# Node / pnpm / yarn / npm
+node_modules
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Build artifacts
+dist
+dist-ssr
+coverage
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+
+# Environment / local
+.env
+.env.*.local
+*.local
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Python cache
+__pycache__
+*.py[cod]
+*.pyo
+
+# Attendance output
+attendance.json
