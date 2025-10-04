@@ -1,4 +1,6 @@
 // server.js (ESM)
+// Load environment variables from .env if present (do this before other imports use process.env)
+import 'dotenv/config';
 import express from 'express';
 import fs from 'node:fs';
 import cors from 'cors';
