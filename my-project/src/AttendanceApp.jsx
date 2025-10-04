@@ -13,6 +13,8 @@ const AttendanceApp = () => {
   // Mode selection after login: 'webcam' | 'image' | null
   const [mode, setMode] = useState(null);
   const [uploadedPreview, setUploadedPreview] = useState(null);
+  // Annotated / visualization image returned from workflow (base64 data URI)
+  const [annotatedImage, setAnnotatedImage] = useState(null);
 
   const sendImage = useCallback(async (imageSrc) => {
     if (!facultyData || !imageSrc) return;
@@ -27,7 +29,30 @@ const AttendanceApp = () => {
       if (!response.ok) throw new Error("Detection failed");
 
       const data = await response.json();
-      setDetections(data.detections || []);
+      setDetections(data.detections || data.predictions || []);
+
+      // Attempt to locate an annotated / visualization image key from the workflow response
+      const annotatedCandidates = [
+        data.image, // sometimes workflows return { image: "<base64>" }
+        data.visualization,
+        data.annotated_image,
+        data.annotatedImage,
+        data.output_image,
+      ].filter(Boolean);
+      if (annotatedCandidates.length > 0) {
+        let imgVal = annotatedCandidates[0];
+        // If it already looks like a data URI keep it, else prepend jpeg header
+        if (typeof imgVal === 'string') {
+          if (!imgVal.startsWith('data:image')) {
+            // Heuristic: add prefix assuming jpeg
+            imgVal = `data:image/jpeg;base64,${imgVal}`;
+          }
+          setAnnotatedImage(imgVal);
+        }
+      } else {
+        // Clear previous when no image returned (optional)
+        // setAnnotatedImage(null);
+      }
 
       setAttendance((prev) => {
         const newAttendance = { ...prev };
@@ -183,16 +208,29 @@ const AttendanceApp = () => {
           </div>
         )}
 
+        {/* Annotated Image (if provided by workflow) */}
+        {annotatedImage && (
+          <div style={{ marginTop: 20 }}>
+            <h2>Annotated Result</h2>
+            <img
+              src={annotatedImage}
+              alt="Annotated detections"
+              style={{ maxWidth: 1000, maxHeight: 480, border: '2px solid #222' }}
+            />
+          </div>
+        )}
+
         <h2>Detected Faces:</h2>
-        {detections.length === 0 ? (
-          <p>No faces detected yet.</p>
-        ) : (
+        {(!detections || detections.length === 0) ? <p>No faces detected yet.</p> : (
           <ul>
-            {detections.map((person) => (
-              <li key={person.id}>
-                {person.name || "Unknown"} (ID: {person.id})
-              </li>
-            ))}
+            {detections.map((person, idx) => {
+              const id = person.id || person.class || idx;
+              return (
+                <li key={id}>
+                  {(person.name || person.class || 'Unknown')} (ID: {id})
+                </li>
+              );
+            })}
           </ul>
         )}
 
